@@ -1,0 +1,35 @@
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1783252169.188181   17121 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+I0000 00:00:1783252169.188604   17121 cudart_stub.cc:31] Could not find cuda drivers on your machine, GPU will not be used.
+I0000 00:00:1783252169.260381   17121 cpu_feature_guard.cc:227] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 AVX_VNNI FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+/usr/lib/python3/dist-packages/scipy/__init__.py:146: UserWarning: A NumPy version >=1.17.3 and <1.25.0 is required for this version of SciPy (detected version 1.26.4
+  warnings.warn(f"A NumPy version >={np_minversion} and <{np_maxversion}"
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1783252170.916665   17121 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+I0000 00:00:1783252170.917274   17121 cudart_stub.cc:31] Could not find cuda drivers on your machine, GPU will not be used.
+/usr/local/lib/python3.10/dist-packages/keras/src/layers/convolutional/base_conv.py:113: UserWarning: Do not pass an `input_shape`/`input_dim` argument to a layer. When using Sequential models, prefer using an `Input(shape)` object as the first layer in the model instead.
+  super().__init__(activity_regularizer=activity_regularizer, **kwargs)
+E0000 00:00:1783252172.803670   17121 cuda_platform.cc:52] failed call to cuInit: INTERNAL: CUDA error: Failed call to cuInit: UNKNOWN ERROR (303)
+WARNING:absl:Compiled the loaded model, but the compiled metrics have yet to be built. `model.compile_metrics` will be empty until you train or evaluate the model.
+WARNING:absl:Error in loading the saved optimizer state. As a result, your model is starting with a freshly initialized optimizer.
+[*] Booting up Live 2D-CNN Traffic Guard...
+[+] Active Protection Loop Deployed. Awaiting traffic streams...
+Traceback (most recent call last):
+  File "/home/pranlinux27/ddos/test.py", line 86, in <module>
+    run_detection_window()
+  File "/home/pranlinux27/ddos/test.py", line 51, in run_detection_window
+    sniff(iface="s1-eth1", prn=process_packet, timeout=1, store=False)
+  File "/usr/lib/python3/dist-packages/scapy/sendrecv.py", line 1036, in sniff
+    sniffer._run(*args, **kwargs)
+  File "/usr/lib/python3/dist-packages/scapy/sendrecv.py", line 906, in _run
+    sniff_sockets[L2socket(type=ETH_P_ALL, iface=iface,
+  File "/usr/lib/python3/dist-packages/scapy/arch/linux.py", line 423, in __init__
+    set_promisc(self.ins, self.iface)
+  File "/usr/lib/python3/dist-packages/scapy/arch/linux.py", line 159, in set_promisc
+    mreq = struct.pack("IHH8s", get_if_index(iff), PACKET_MR_PROMISC, 0, b"")
+  File "/usr/lib/python3/dist-packages/scapy/arch/linux.py", line 372, in get_if_index
+    return int(struct.unpack("I", get_if(iff, SIOCGIFINDEX)[16:20])[0])
+  File "/usr/lib/python3/dist-packages/scapy/arch/common.py", line 30, in get_if
+    return ioctl(sck, cmd, struct.pack("16s16x", iff.encode("utf8")))
+OSError: [Errno 19] No such device
