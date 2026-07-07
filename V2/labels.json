@@ -1,0 +1,6 @@
+[
+  "BENIGN",
+  "SLOWLORIS",
+  "SYN_FLOOD",
+  "UDP_FLOOD"
+]

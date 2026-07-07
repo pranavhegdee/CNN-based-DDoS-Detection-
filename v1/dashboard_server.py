@@ -35,9 +35,6 @@ state = {
     "fwd_len": 0,
     "bwd_len": 0,
     "prediction": 0.0,
-    "attack_type": "BENIGN",
-    "class_probs": {},
-    "stat_zscore": 0.0,
     "attacker_ip": None,
     "blocked_ips": [],
     "lockdown": False,
@@ -72,29 +69,14 @@ def telemetry():
         state["bwd_len"] = data.get("bwd_len", 0)
         state["prediction"] = float(data.get("prediction", 0.0))
         state["status"] = data.get("status", "SAFE")
-        state["attack_type"] = data.get("attack_type") or "BENIGN"
-        state["class_probs"] = data.get("class_probs") or {}
-        state["stat_zscore"] = float(data.get("stat_zscore", 0.0))
         state["lockdown"] = bool(data.get("lockdown", False))
         state["attacker_ip"] = data.get("attacker_ip")
         state["last_update"] = _now()
         state["connected"] = True
 
         new_blocked = data.get("new_blocked_ip")
-        block_reason = data.get("block_reason")
         if new_blocked:
-            blocked_log.appendleft({"t": _now(), "ip": new_blocked, "action": "blocked",
-                                     "reason": block_reason or ""})
-            state["blocked_ips"] = data.get("blocked_ips", state["blocked_ips"])
-        elif block_reason and data.get("attacker_ip"):
-            # A candidate attacker was evaluated but the block was withheld
-            # (protected IP, or spoof verification didn't confirm it yet) —
-            # log that decision too so it's visible, not silent. Dedup
-            # identical consecutive entries so this doesn't spam once/sec.
-            ip = data.get("attacker_ip")
-            last = blocked_log[0] if blocked_log else None
-            if not (last and last.get("ip") == ip and last.get("reason") == block_reason):
-                blocked_log.appendleft({"t": _now(), "ip": ip, "action": "withheld", "reason": block_reason})
+            blocked_log.appendleft({"t": _now(), "ip": new_blocked})
             state["blocked_ips"] = data.get("blocked_ips", state["blocked_ips"])
         elif "blocked_ips" in data:
             state["blocked_ips"] = data["blocked_ips"]

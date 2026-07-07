@@ -91,6 +91,8 @@
   .status-ATTACK .ring{background:var(--danger);}
   .status-LOCKDOWN{background:var(--warn-soft); color:#8A5C15;}
   .status-LOCKDOWN .ring{background:var(--warn);}
+  .status-SUSPECT{background:var(--warn-soft); color:#8A5C15;}
+  .status-SUSPECT .ring{background:var(--warn); animation:ringPulse 1s ease-out infinite;}
   @keyframes pulseBg{ 50%{ filter:brightness(0.96);} }
 
   /* ---------- Cards ---------- */
@@ -151,15 +153,23 @@
   /* ---------- Chart + bottom grid ---------- */
   .chart-card{ padding:20px 24px; margin-bottom:20px; }
   .chart-card canvas{ max-height:220px; }
+  .class-row{ display:grid; grid-template-columns:150px 1fr 56px; align-items:center; gap:10px; padding:5px 0; }
+  .class-row .name{ font-size:12px; font-family:'IBM Plex Mono', monospace; color:var(--ink-soft); }
+  .class-row .name.top{ color:var(--ink); font-weight:600; }
+  .class-track{ height:8px; background:var(--line); border-radius:4px; overflow:hidden; }
+  .class-fill{ height:100%; border-radius:4px; background:var(--accent); transition:width .4s ease, background .4s ease; }
+  .class-row .pct{ font-size:12px; font-family:'IBM Plex Mono', monospace; text-align:right; color:var(--ink-soft); }
 
   .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:20px; }
   .log-card{ padding:18px 22px 22px; max-height:320px; display:flex; flex-direction:column; }
   .log-list{ overflow-y:auto; flex:1; margin:0; padding:0; list-style:none; }
   .log-list li{
-    display:flex; align-items:center; justify-content:space-between;
+    display:flex; flex-direction:column; gap:3px;
     padding:9px 0; border-bottom:1px dashed var(--line);
     font-size:13px;
   }
+  .log-list li .log-row{ display:flex; align-items:center; justify-content:space-between; }
+  .log-list li .log-reason{ font-size:11px; color:var(--ink-soft); }
   .log-list li:last-child{ border-bottom:none; }
   .tag{
     font-size:10.5px; font-weight:600; padding:2px 8px; border-radius:100px;
@@ -168,6 +178,7 @@
   .tag.ok{ background:var(--safe-soft); color:#1F6B4F; }
   .tag.deny{ background:var(--danger-soft); color:#8E2E25; }
   .tag.block{ background:var(--danger-soft); color:#8E2E25; }
+  .tag.withheld{ background:var(--warn-soft); color:#8A5C15; }
   .empty{ color:var(--ink-soft); font-size:13px; padding:20px 0; text-align:center; }
 
   @media (max-width:900px){
@@ -269,15 +280,22 @@
     <div class="delta mono"><span id="mBwd">0</span> bwd packets</div>
   </div>
   <div class="card metric">
-    <p class="card-title">Model Confidence</p>
-    <div><span id="mScore" class="value mono">0%</span></div>
+    <p class="card-title">Classification</p>
+    <div><span id="mClass" class="value mono" style="font-size:20px;">BENIGN</span></div>
     <div class="gauge-track"><div id="mScoreBar" class="gauge-fill"></div></div>
+    <div class="delta mono" id="mScoreText">0% confidence</div>
   </div>
   <div class="card metric">
     <p class="card-title">Mitigation</p>
     <div><span id="mBlockedCount" class="value mono">0</span><span class="unit">IPs dropped</span></div>
     <div class="delta mono" id="mLockText">RSA channel: open</div>
   </div>
+</div>
+
+<!-- classification breakdown -->
+<div class="card chart-card" id="classBreakdownCard">
+  <p class="card-title">Attack Type Breakdown</p>
+  <div id="classBars"><p class="empty">Waiting for data…</p></div>
 </div>
 
 <!-- chart -->
@@ -289,7 +307,7 @@
 <!-- logs -->
 <div class="grid2">
   <div class="card log-card">
-    <p class="card-title">VACL Mitigation Log</p>
+    <p class="card-title">Mitigation &amp; Spoof-Check Log</p>
     <ul class="log-list" id="blockedList"><li class="empty">No mitigation actions yet</li></ul>
   </div>
   <div class="card log-card">
@@ -411,12 +429,33 @@ function render(s){
   document.getElementById('mFwd').textContent = s.fwd_pkts;
   document.getElementById('mBwd').textContent = s.bwd_pkts;
   const pct = Math.min(100, Math.round((s.prediction || 0) * 100));
-  document.getElementById('mScore').textContent = pct + '%';
+  const attackType = s.attack_type || 'BENIGN';
+  document.getElementById('mClass').textContent = attackType;
+  document.getElementById('mScoreText').textContent = pct + '% confidence';
   const bar = document.getElementById('mScoreBar');
   bar.style.width = pct + '%';
-  bar.style.background = pct > 60 ? COLORS.danger : (pct > 30 ? COLORS.warn : COLORS.accent);
+  const isBenign = attackType === 'BENIGN';
+  bar.style.background = isBenign ? COLORS.safe : (pct > 70 ? COLORS.danger : COLORS.warn);
+  document.getElementById('mClass').style.color = isBenign ? '' : COLORS.danger;
   document.getElementById('mBlockedCount').textContent = (s.blocked_ips || []).length;
   document.getElementById('mLockText').textContent = s.lockdown ? 'RSA channel: locked & enforced' : 'RSA channel: open';
+
+  // classification breakdown
+  const probs = s.class_probs || {};
+  const entries = Object.entries(probs).sort((a,b) => b[1]-a[1]);
+  const barsEl = document.getElementById('classBars');
+  if (entries.length){
+    barsEl.innerHTML = entries.map(([name, p], i) => {
+      const p100 = Math.round(p*100);
+      const color = name === 'BENIGN' ? COLORS.safe : (i === 0 ? COLORS.danger : COLORS.accent);
+      return `
+        <div class="class-row">
+          <span class="name ${i===0 ? 'top' : ''}">${name}</span>
+          <div class="class-track"><div class="class-fill" style="width:${p100}%; background:${color};"></div></div>
+          <span class="pct">${p100}%</span>
+        </div>`;
+    }).join('');
+  }
 
   // topology
   const attacking = s.status === 'ATTACK' || s.status === 'LOCKDOWN';
@@ -441,9 +480,18 @@ function render(s){
   // blocked log
   const bl = document.getElementById('blockedList');
   if (s.blocked_log && s.blocked_log.length){
-    bl.innerHTML = s.blocked_log.map(e => `
-      <li><span class="mono">${fmtTime(e.t)}</span><span class="mono">${e.ip}</span><span class="tag block">dropped</span></li>
-    `).join('');
+    bl.innerHTML = s.blocked_log.map(e => {
+      const isBlocked = e.action !== 'withheld';
+      return `
+      <li>
+        <div class="log-row">
+          <span class="mono">${fmtTime(e.t)}</span>
+          <span class="mono">${e.ip}</span>
+          <span class="tag ${isBlocked ? 'block' : 'withheld'}">${isBlocked ? 'dropped' : 'withheld'}</span>
+        </div>
+        ${e.reason ? `<div class="log-reason">${e.reason}</div>` : ''}
+      </li>`;
+    }).join('');
   }
 
   // gateway log
