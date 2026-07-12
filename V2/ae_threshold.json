@@ -1,0 +1,8 @@
+{
+  "threshold": 0.05008574359019746,
+  "mean_benign_error": 0.009013587629378211,
+  "std_benign_error": 0.009101581427740433,
+  "p95": 0.02363425146403914,
+  "p99": 0.05008574359019746,
+  "note": "Anomaly if reconstruction MSE > threshold (p99 of benign validation error)."
+}

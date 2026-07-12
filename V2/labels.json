@@ -1,6 +1,1 @@
-[
-  "BENIGN",
-  "SLOWLORIS",
-  "SYN_FLOOD",
-  "UDP_FLOOD"
-]
+["BENIGN", "SYN_FLOOD", "UDP_FLOOD"]
